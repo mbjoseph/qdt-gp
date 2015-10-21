@@ -1,0 +1,433 @@
+---
+title: 'QDT: Gaussian process models'
+author: "Max Joseph"
+date: "October 21, 2015"
+output: 
+  beamer_presentation:
+    fig_crop: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+par(bty='n')
+```
+
+# Background: univariate normal
+
+$$x \sim N(\mu, \sigma^2)$$
+
+```{r, echo=FALSE, fig.height=4, fig.width=5}
+x <- seq(-3, 3, .1)
+plot(x, dnorm(x), type='l', main='Normal(0, 1) probability density')
+```
+
+# Background: multivariate normal
+
+$$\boldsymbol{x} \sim N(\boldsymbol{\mu}, \boldsymbol{\Sigma})$$
+
+$\boldsymbol{\mu}$: vector of means
+
+$\boldsymbol{\Sigma}$: covariance matrix
+
+# Bivariate normal probability density
+
+$$\boldsymbol{x} \sim N(\boldsymbol{\mu}, \boldsymbol{\Sigma})$$
+
+```{r, fig.width=8, fig.height=4}
+# lets first simulate a bivariate normal sample
+library(MASS)
+bivn <- mvrnorm(100000, mu = c(0, 0), Sigma = matrix(c(1, .5, .5, 1), 2))
+
+# now we do a kernel density estimate
+bivn.kde <- kde2d(bivn[,1], bivn[,2], n = 50)
+
+par(mfrow=c(1, 2))
+# now plot your results
+persp(bivn.kde, phi = 45, theta = 30, xlab='x1', ylab='x2', zlab='p(x1, x2)')
+
+# fancy contour with image
+image(bivn.kde, xlab='x1', ylab='x2'); contour(bivn.kde, add = T)
+```
+
+# Bivariate normal parameters
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+Cov[X_1, X_1] & Cov[X_1, X_2] \\
+Cov[X_2, X_1] & Cov[X_2, X_2]
+\end{bmatrix}$
+
+```{r, fig.width=6, fig.height=6}
+Sigma <- matrix(c(1, .5, .5, 1), nrow=2)
+n <- 10000
+z <- matrix(rnorm(n), nrow=nrow(Sigma))
+y <- t(chol(Sigma)) %*% z
+plot(y[1, ], y[2, ], xlab=expression(x[1]), ylab=expression(x[2]))
+text(0, 0, labels=expression(bold(mu)), col='red', cex=2)
+```
+
+# Bivariate normal parameters
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+0 \\
+0
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+1 & 0.5 \\
+0.5 & 1
+\end{bmatrix}$
+
+```{r, fig.width=6, fig.height=6}
+plot(y[1, ], y[2, ], xlab=expression(x[1]), ylab=expression(x[2]))
+text(0, 0, labels=expression(bold(mu)), col='red', cex=2)
+```
+
+# Uncorrelated bivariate normal
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+0 \\
+0
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+1 & 0 \\
+0 & 1
+\end{bmatrix}$
+
+```{r, fig.width=6, fig.height=6}
+Sigma <- matrix(c(1, 0, 0, 1), nrow=2)
+y <- t(chol(Sigma)) %*% z
+plot(y[1, ], y[2, ], xlab=expression(x[1]), ylab=expression(x[2]))
+text(0, 0, labels=expression(bold(mu)), col='red', cex=2)
+```
+
+# Common notation
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+\sigma_1^2 & \rho \sigma_1 \sigma_2 \\
+\rho \sigma_1 \sigma_2 & \sigma_2^2
+\end{bmatrix}$
+
+# Common notation
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+\sigma_1^2 & \rho \sigma_1 \sigma_2 \\
+\rho \sigma_1 \sigma_2 & \sigma_2^2
+\end{bmatrix}$
+
+$Cov[X_1, X_1] = Var[X_1] = \sigma_1^2$
+
+$Cov[X_1, X_2] = \rho \sigma_1 \sigma_2$
+
+$\Sigma$ must be symmetric and positive definite
+
+# Relevant properties of multivariate normals
+
+1. Marginal distributions are normal
+2. Conditional distributions are normal
+
+# Marginals are normal
+
+**Joint distribution:**
+$\boldsymbol{y} \sim N(\boldsymbol{\mu}, \boldsymbol{\Sigma})$
+
+$\boldsymbol{\mu} = \begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix},$
+$\boldsymbol{\Sigma} = \begin{bmatrix}
+\sigma_1^2 & \rho \sigma_1 \sigma_2 \\
+\rho \sigma_1 \sigma_2 & \sigma_2^2
+\end{bmatrix}$
+
+
+**Marginal distribution:**
+$y_1 \sim N(\mu_1, \sigma_1^2)$
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 30, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 25, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 20, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 15, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 10, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 5, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 35, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 25, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 15, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 5, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation
+
+```{r}
+persp(bivn.kde, phi = 0, theta = 0, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Graphical interpretation: marginal of $y_1$
+
+$N(\mu_1, \sigma_1^2)$
+
+```{r}
+persp(bivn.kde, phi = -15, theta = 0, xlab='y1', ylab='y2', zlab='p(y1)')
+```
+
+# Conditional distributions are normal
+
+**Joint distribution:**
+$\begin{bmatrix}
+Y_1 \\
+Y_2
+\end{bmatrix} \sim N\Bigg(
+\begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix}, 
+\begin{bmatrix}
+\Omega_{11} & \Omega_{12} \\
+\Omega_{21} & \Omega_{22}
+\end{bmatrix} \Bigg)$
+
+**Conditional distribution:**
+
+$Y_1 | Y_2 = y_2 \sim N(\mu, \Sigma)$
+
+# Graphical interpretation of conditioning
+
+```{r}
+persp(bivn.kde, phi = 45, theta = 30, xlab='y1', ylab='y2', zlab='p(y1, y2)')
+```
+
+# Conditional of $Y_1$
+
+**Joint distribution:**
+$\begin{bmatrix}
+Y_1 \\
+Y_2
+\end{bmatrix} \sim N\Bigg(
+\begin{bmatrix}
+\mu_1 \\
+\mu_2
+\end{bmatrix}, 
+\begin{bmatrix}
+\Omega_{11} & \Omega_{12} \\
+\Omega_{21} & \Omega_{22}
+\end{bmatrix} \Bigg)$
+
+**Conditional distribution:**
+
+$Y_1 | Y_2 \sim N(E(Y_1 | Y_2), Var(Y_1 | Y_2))$
+
+$E(Y_1 | Y_2) = \mu_1 + \Omega_{12} \Omega_{22}^{-1}(Y_2 - \mu_2)$
+
+$Var(Y_1 | Y_2) = \Omega_{11} - \Omega_{12} \Omega_{22}^{-1} \Omega_{21}$
+
+# Now the fun stuff
+
+**Classic linear modeling**
+
+$$y = X\beta + \epsilon$$
+
+$$\epsilon \sim N(0, \sigma^2)$$
+
+Functional form determined by $X \beta$
+
+# Linear model functional forms
+
+e.g. $y = \mu(x) + \epsilon$
+
+```{r}
+n <- 20
+x <- rnorm(n)
+beta <- c(1, 1, -.5)
+X <- matrix(c(rep(1, n), x, x^3), ncol=3)
+y <- c(scale(X %*% beta + rnorm(n)))
+plot(x, y, ylim=range(y) * 2)
+m1 <- lm(y ~ x)
+m2 <- lm(y ~ x + I(x^2))
+abline(m1)
+newx <- seq(min(x), max(x), .01)
+p1 <- predict(m1, data.frame(x=newx), interval='prediction')
+p2 <- predict(m2, data.frame(x=newx), interval='prediction')
+matlines(newx, p1, lty=c(1, 2, 2), col=1)
+matlines(newx, p2, lty=c(1, 2, 2), col=2)
+```
+
+# Why not set a prior on $\mu(x)$?
+
+*Gaussian process* as a prior for $\mu(x)$
+
+$$y \sim N(\mu(x), \sigma^2)$$
+
+$$\mu(x) \sim GP(m, k)$$
+
+# GP prior for $\mu(x)$
+
+$y \sim N(\mu(x), \sigma^2)$
+
+$\mu(x) \sim GP(m, k)$
+
+```{r, fig.width=6, fig.height=4}
+library(scales)
+plot(x, y, ylim=range(y) * 2, pch=19)
+D <- as.matrix(dist(x))
+C <- function(sigma, d, rho){
+  stopifnot(sigma > 0)
+  stopifnot(rho > 0)
+  sigma ^ 2 * exp(-d^2 / (2 * rho ^ 2))
+}
+sigma_e <- .00001
+n_p <- 1000
+x_p <- sort(runif(n_p, min(x), max(x)))
+d_mat <- as.matrix(dist(x_p))
+Emat <- diag(rep(sigma_e^2, n_p))
+# simulate realizations
+for (i in 1:100){
+  sigma <- runif(1, 0, 5)
+  rho <- runif(1, 0, 4)
+  Cmat <- C(sigma, d_mat, rho)
+  L_c <- t(chol(Cmat + Emat))
+  z <- rnorm(n_p)
+  y_p <- L_c %*% z
+  lines(x_p, y_p + mean(y), col=alpha(1, .1))
+}
+title('Data and realizations from a GP prior')
+```
+
+# Wait, what's Gaussian about that?
+
+If $\mu(x) \sim GP(m, k)$, then 
+
+$\mu(x_1), ..., \mu(x_n) \sim N(m(x_1), ..., m(x_n), K(x_1, ..., x_n)$
+
+$m$ and $k$ are functions!
+
+# Mean function: m
+
+Classic example: $m(x) = X \beta$
+
+e.g., $\mu(x) \sim GP(X \beta, k(x))$
+
+But, the covariance function $k(x)$ is the real star.
+
+# Covariance functions
+
+$k$ specifies covariance between to $x$ values
+
+Squared exponential covariance:
+
+$$k(x, x') = \tau^2 exp\Big(-\dfrac{|x - x'|^2}{l^2}\Big)$$
+
+Lots of [options](http://www.gaussianprocess.org/gpml/chapters/RW4.pdf): smooth, jaggety, periodic
+
+# Example of squared exponential
+
+$$ \boldsymbol{K} = \begin{bmatrix}
+\tau^2 exp(-\frac{|x_1 - x_1|^2}{l^2}) & \tau^2 exp(-\frac{|x_1 - x_2|^2}{l^2}) \\
+\tau^2 exp(-\frac{|x_2 - x_1|^2}{l^2}) & \tau^2 exp(-\frac{|x_2 - x_2|^2}{l^2})
+\end{bmatrix}$$
+
+# Example of squared exponential
+
+$$ \boldsymbol{K} = \begin{bmatrix}
+\tau^2 exp(-\frac{0^2}{l^2}) & \tau^2 exp(-\frac{|x_1 - x_2|^2}{l^2}) \\
+\tau^2 exp(-\frac{|x_2 - x_1|^2}{l^2}) & \tau^2 exp(-\frac{0^2}{l^2})
+\end{bmatrix}$$
+
+# Example of squared exponential
+
+$$ \boldsymbol{K} = \begin{bmatrix}
+\tau^2 exp(0) & \tau^2 exp(-\frac{|x_1 - x_2|^2}{l^2}) \\
+\tau^2 exp(-\frac{|x_2 - x_1|^2}{l^2}) & \tau^2 exp(0)
+\end{bmatrix}$$
+
+# Example of squared exponential
+
+$$ \boldsymbol{K} = \begin{bmatrix}
+\tau^2 & \tau^2 exp(-\frac{|x_1 - x_2|^2}{l^2}) \\
+\tau^2 exp(-\frac{|x_2 - x_1|^2}{l^2}) & \tau^2
+\end{bmatrix}$$
+
+$Cor(\mu(x_1), \mu(x_2)) = exp(-\frac{|x_1 - x_2|^2}{l^2})$.
+
+# Correlation function
+
+```{r}
+d <- seq(0, 1, .01)
+sq_exp <- function(d, phi) {
+  exp(-d^2 / phi)
+}
+plot(d, sq_exp(d, .1), type='l', 
+     xlab='Distance between x1 & x2', 
+     ylab='Correlation: mu(x1) & mu(x2)')
+```
+
+# Let's check it out
+
+`sim.R`: GP simulations with 1d and 2d inputs
+
+`estimate.R`: GP estimation with 1d inputs
