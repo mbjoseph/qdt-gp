@@ -129,7 +129,7 @@ $Cov[X_1, X_1] = Var[X_1] = \sigma_1^2$
 
 $Cov[X_1, X_2] = \rho \sigma_1 \sigma_2$
 
-$\Sigma$ must be symmetric and positive definite
+$\Sigma$ must be symmetric and positive semi-definite
 
 # Relevant properties of multivariate normals
 
