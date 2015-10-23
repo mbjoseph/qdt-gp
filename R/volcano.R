@@ -2,6 +2,7 @@
 library(fields)
 library(reshape2)
 library(rstan)
+source('hdi.R')
 
 # subsample/prep the volcano data -----------------------
 p_miss <- .99
@@ -73,11 +74,11 @@ chi <- acast(new_x[c('Var1', 'Var2', 'hi')], Var1 ~ Var2)
 # evaluate predictive error
 par(mfrow=c(2, 3))
 par(mar=c(0, 1, 1, 1))
-persp(volcano, theta=40, phi=45)
+persp(volcano, theta=40, phi=45, xlab='X')
 title('Volcano data', line=-1)
-persp(cd, theta=40, phi=45)
+persp(cd, theta=40, phi=45, xlab='X')
 title('Posterior mean based on 1% of data', line=-1)
-persp((scale(volcano) - cd)^2, theta=40, phi=45)
+persp((scale(volcano) - cd)^2, theta=40, phi=45, xlab='X')
 title('Squared error', line=-1)
 par(mar=c(5, 4, 1, 2) + 0.1)
 image(volcano, col=terrain.colors(50))
