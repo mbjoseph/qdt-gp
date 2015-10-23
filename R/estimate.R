@@ -13,9 +13,9 @@ f <- function(x){
   #.2 * x
   #-5*exp(-x)
 }
-n <- 20
+n <- 40
 x <- sort(runif(n, 0, 10))
-error <- rnorm(n, 0, .2)
+error <- rnorm(n, 0, 2)
 y <- f(x) + error 
 
 plot(x, y, col='red')
@@ -24,7 +24,7 @@ lines(seq(min(x), max(x), length.out=200),
 y <- c(scale(y))
 
 # simulate missingness in response vector
-p_miss <- .4
+p_miss <- .2
 n_miss <- round(p_miss * n)
 obs_rm <- sort(sample(n, n_miss))
 x_obs <- x[-obs_rm]
@@ -44,7 +44,7 @@ watch <- c('eta_sq', 'phi', 'mu', 'sigma_sq', 'y_pred')
 m_init <- stan('1d_sq_exp.stan', 
                data=stan_d, chains=1, iter=10)
 m_fit <- stan(fit=m_init, chains=2, cores=2, 
-              iter=1000, data=stan_d, pars=watch)
+              iter=600, data=stan_d, pars=watch)
 m_fit
 post <- extract(m_fit)
 
